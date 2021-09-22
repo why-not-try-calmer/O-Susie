@@ -89,19 +89,11 @@ async def on_startup(_app) -> None:
 
 if __name__ == '__main__':
     from sys import argv
-    """
-    if len(argv) < 2 or argv[1] == "--webhook":
-        from aiohttp import web
-        print(f"Called with {argv}, running as webhook")
-        app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_URL_PATH)
-        app.on_startup.append(on_startup)
-        print(f"Set up webhook at {WEBHOOK_URL}, running now")
-        web.run_app(app, host='0.0.0.0', port=int(env.get('PORT', 8080)))
-    """
     import uvloop
     uvloop.install()
     loop = asyncio.get_event_loop()
     if len(argv) < 2 or argv[1] == "--webhook":
+        print(f"Called with {argv}, running as aiohttp server after setting webhook.")
         from aiogram.utils import executor
         executor.start_webhook(
             dispatcher=dp,
