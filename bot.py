@@ -1,3 +1,4 @@
+from aiohttp import web_app
 from verify import *
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.webhook import get_new_configured_app
@@ -101,13 +102,15 @@ if __name__ == '__main__':
     uvloop.install()
     loop = asyncio.get_event_loop()
     if len(argv) < 2 or argv[1] == "--webhook":
-        from aiogram import executor
+        from aiogram.utils import executor
         executor.start_webhook(
-            webhook_path=WEBHOOK_URL_PATH,
             dispatcher=dp,
+            webhook_path=WEBHOOK_URL_PATH,
             loop=loop,
             skip_updates=True,
-            on_startup=on_startup
+            on_startup=on_startup,
+            host="0.0.0.0",
+            port=int(env.get('PORT', 8080))
         )
     else:
         print(f"Called with {argv}, running as long-poller")
