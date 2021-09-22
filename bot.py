@@ -105,5 +105,5 @@ if __name__ == '__main__':
             port=int(env.get('PORT', 8080))
         )
     else:
-        print(f"Called with {argv}, running as long-poller")
+        print(f"Called with {argv}, running as long-polling worker.")
         asyncio.run(dp.start_polling())
