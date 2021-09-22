@@ -88,6 +88,7 @@ async def on_startup(_app) -> None:
 
 if __name__ == '__main__':
     from sys import argv
+    """
     if len(argv) < 2 or argv[1] == "--webhook":
         from aiohttp import web
         print(f"Called with {argv}, running as webhook")
@@ -95,8 +96,19 @@ if __name__ == '__main__':
         app.on_startup.append(on_startup)
         print(f"Set up webhook at {WEBHOOK_URL}, running now")
         web.run_app(app, host='0.0.0.0', port=int(env.get('PORT', 8080)))
+    """
+    import uvloop
+    uvloop.install()
+    loop = asyncio.get_event_loop()
+    if len(argv) < 2 or argv[1] == "--webhook":
+        from aiogram import executor
+        executor.start_webhook(
+            webhook_path=WEBHOOK_URL_PATH,
+            dispatcher=dp,
+            loop=loop,
+            skip_updates=True,
+            on_startup=on_startup
+        )
     else:
-        import uvloop
         print(f"Called with {argv}, running as long-poller")
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         asyncio.run(dp.start_polling())
