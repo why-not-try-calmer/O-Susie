@@ -1,6 +1,5 @@
 from verify import *
 from aiogram import Bot, Dispatcher, types
-from aiogram.dispatcher.webhook import get_new_configured_app
 from datetime import datetime
 from os import environ as env
 from dotenv import load_dotenv
