@@ -1,4 +1,3 @@
-from aiohttp import web_app
 from verify import *
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.webhook import get_new_configured_app
