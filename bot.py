@@ -79,6 +79,11 @@ async def handle_messages(message: types.Message) -> None:
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 
+@dp.message_handler(content_types=types.ContentTypes.ANY)
+async def handle_otherwise(_any) -> None:
+    print(f"Silently handled: {_any}")
+
+
 async def on_startup(_app) -> None:
     """Simple hook for aiohttp application which manages webhook"""
     await bot.delete_webhook()
@@ -91,7 +96,8 @@ if __name__ == '__main__':
     uvloop.install()
     loop = asyncio.get_event_loop()
     if len(argv) < 2 or argv[1] == "--webhook":
-        print(f"Called with {argv}, running as aiohttp server after setting webhook.")
+        print(
+            f"Called with {argv}, running as aiohttp server after setting webhook.")
         from aiogram.utils import executor
         executor.start_webhook(
             dispatcher=dp,
