@@ -1,1 +1,1 @@
-web: python bot.py --webhook
+worker: python bot.py

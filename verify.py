@@ -62,13 +62,14 @@ def delete_after_delay(message_id: int, chat: types.Chat, delay: int) -> None:
 
 
 def kick_after_delay(bot: Bot, chat: types.Chat, user_id: int) -> None:
-    async def kicking(user_id: int) -> None:
+    async def kicking() -> None:
         await asyncio.sleep(DELAY)
         reply = bot.send_message(
             chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
         kick = chat.kick(user_id)
-        await asyncio.gather(reply, kick)
-    PURGATORY[user_id]["timer"] = asyncio.create_task(kicking(user_id))
+        _cleanup = cleanup(chat, user_id)
+        await asyncio.gather(reply, kick, _cleanup)
+    PURGATORY[user_id]["timer"] = asyncio.create_task(kicking())
 
 
 def visit_purgatory(user_id: int) -> bool:
@@ -78,13 +79,15 @@ def visit_purgatory(user_id: int) -> bool:
     return False
 
 
-async def to_heavens(chat: types.Chat, user_id: int) -> None:
+async def cleanup(chat: types.Chat, user_id: int) -> None:
+    await asyncio.gather(*[chat.delete_message(m_id) for m_id in PURGATORY[user_id]["pending_messages"][chat.id]])
     PURGATORY[user_id]["timer"].cancel()
     PURGATORY.__delitem__(user_id)
-    await unrestrict(chat=chat, user_id=user_id)
+
+
+async def to_heavens(chat: types.Chat, user_id: int) -> None:
+    await asyncio.gather(unrestrict(chat=chat, user_id=user_id), cleanup(chat, user_id))
 
 
 async def to_hell(cb: types.CallbackQuery, user_id: int) -> None:
-    PURGATORY[user_id]["timer"].cancel()
-    PURGATORY.__delitem__(user_id)
-    await cb.message.chat.kick(user_id)
+    await asyncio.gather(cb.message.chat.kick(user_id), cleanup(cb.message.chat, user_id))
