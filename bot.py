@@ -70,8 +70,8 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
 @dp.message_handler(content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def just_joined(message: types.Message) -> None:
     chat = message.chat
-    _values = [getattr(u, "_values") for u in message.new_chat_members]
-    users_ids = [u["id"] for u in _values if not u["is_bot"]]
+    values = [getattr(u, "_values") for u in message.new_chat_members]
+    users_ids = [u["id"] for u in values if not u["is_bot"]]
     response_msg = await bot.send_message(
         chat_id=chat.id,
         text=f"Hey, a new gecko! If you are not a bot, please answer this question within the next *{DELAY} seconds*. What emoji below resembles the openSUSE mascot the most?",
