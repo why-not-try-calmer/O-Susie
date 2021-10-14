@@ -1,5 +1,6 @@
 from asyncio.tasks import Task
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import _DefaultFactory, dataclass, field
 from datetime import timedelta, datetime
 from functools import reduce
 from typing import Dict, List, Optional, Tuple
@@ -63,7 +64,7 @@ class UserData:
 @dataclass
 class ChatData:
     chat_id: int
-    users: Dict[int, UserData] = {}
+    users: Dict[int, UserData] = field(default_factory=dict)
 
 
 # verification workflow
