@@ -1,4 +1,4 @@
-from verify import *
+from verify import Verify, create_verification_keyboard, asyncio, DELAY, UserData
 from aiogram import Bot, Dispatcher, types
 from datetime import datetime
 from os import environ as env

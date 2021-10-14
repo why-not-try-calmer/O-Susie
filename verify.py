@@ -61,38 +61,38 @@ class ChatData:
 class Verify:
     chats_state: Dict[int, ChatData] = {}
 
-    @classmethod
-    def visit_purgatory(cls, chat_id: int, user_id: int) -> bool:
-        if cls.chats_state[chat_id].users[user_id].counter == 0 and datetime.now() - cls.chats_state[chat_id].users[user_id].joined_at < DELTA:
-            cls.chats_state[chat_id].users[user_id].counter += 1
+    @staticmethod
+    def visit_purgatory(chat_id: int, user_id: int) -> bool:
+        if Verify.chats_state[chat_id].users[user_id].counter == 0 and datetime.now() - Verify.chats_state[chat_id].users[user_id].joined_at < DELTA:
+            Verify.chats_state[chat_id].users[user_id].counter += 1
             return True
         return False
 
-    @classmethod
-    async def cleanup(cls, chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(*[chat.delete_message(m_id) for m_id in cls.chats_state[chat.id].users[user_id].pending_messages_ids[chat.id]])
-        if timer := cls.chats_state[chat.id].users[user_id].timer:
+    @staticmethod
+    async def cleanup(chat: types.Chat, user_id: int) -> None:
+        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.chats_state[chat.id].users[user_id].pending_messages_ids[chat.id]])
+        if timer := Verify.chats_state[chat.id].users[user_id].timer:
             timer.cancel()
-        cls.chats_state[chat.id].users.__delitem__(user_id)
+        Verify.chats_state[chat.id].users.__delitem__(user_id)
 
-    @classmethod
-    async def to_heavens(cls, chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(Verify.unrestrict(chat=chat, user_id=user_id), cls.cleanup(chat, user_id))
+    @staticmethod
+    async def to_heavens(chat: types.Chat, user_id: int) -> None:
+        await asyncio.gather(Verify.unrestrict(chat=chat, user_id=user_id), Verify.cleanup(chat, user_id))
 
-    @classmethod
-    async def to_hell(cls, cb: types.CallbackQuery, user_id: int) -> None:
-        await asyncio.gather(cb.message.chat.kick(user_id), cls.cleanup(cb.message.chat, user_id))
+    @staticmethod
+    async def to_hell(cb: types.CallbackQuery, user_id: int) -> None:
+        await asyncio.gather(cb.message.chat.kick(user_id), Verify.cleanup(cb.message.chat, user_id))
 
-    @classmethod
-    def kick_after_delay(cls, bot: Bot, chat: types.Chat, user_id: int) -> None:
+    @staticmethod
+    def kick_after_delay(bot: Bot, chat: types.Chat, user_id: int) -> None:
         async def kicking() -> None:
             await asyncio.sleep(DELAY)
             reply = bot.send_message(
                 chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
             kick = chat.kick(user_id)
-            _cleanup = cls.cleanup(chat, user_id)
+            _cleanup = Verify.cleanup(chat, user_id)
             await asyncio.gather(reply, kick, _cleanup)
-        cls.chats_state[chat.id].users[user_id].timer = asyncio.create_task(
+        Verify.chats_state[chat.id].users[user_id].timer = asyncio.create_task(
             kicking())
 
     @staticmethod
