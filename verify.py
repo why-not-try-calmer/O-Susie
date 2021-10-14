@@ -55,7 +55,7 @@ def create_verification_keyboard() -> types.InlineKeyboardMarkup:
 @dataclass
 class UserData:
     counter: int
-    pending_messages_ids: Dict[int, List[int]]
+    pending_messages_ids: List[int]
     joined_at: datetime
     timer: Optional[Task] = None
 
@@ -80,7 +80,7 @@ class Verify:
 
     @staticmethod
     async def cleanup(chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.chats_state[chat.id].users[user_id].pending_messages_ids[chat.id]])
+        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.chats_state[chat.id].users[user_id].pending_messages_ids])
         if timer := Verify.chats_state[chat.id].users[user_id].timer:
             timer.cancel()
         Verify.chats_state[chat.id].users.__delitem__(user_id)

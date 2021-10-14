@@ -61,8 +61,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     elif Verify.visit_purgatory(chat_id, user_id):
         text = "Wrong answer. Make sure you get it right now or you will get banned *forever*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-        Verify.chats_state[chat_id].users[user_id].pending_messages_ids[chat_id].append(
-            response_msg.message_id)
+        Verify.chats_state[chat_id].users[user_id].pending_messages_ids.append(response_msg.message_id)
 
     else:
         await Verify.to_hell(cb, user_id)
@@ -82,8 +81,7 @@ async def just_joined(message: types.Message) -> None:
 
     for task in asyncio.as_completed([Verify.restrict(chat, _id) for _id in users_ids]):
         user_id = await task
-        Verify.chats_state[chat.id].users[user_id] = UserData(pending_messages_ids={
-            chat.id: [response_msg.message_id]}, joined_at=datetime.now(), counter=0)
+        Verify.chats_state[chat.id].users[user_id] = UserData(pending_messages_ids=[response_msg.message_id], joined_at=datetime.now(), counter=0)
         Verify.kick_after_delay(bot, chat, user_id)
 
 
