@@ -62,14 +62,14 @@ def delete_after_delay(message_id: int, chat: types.Chat, delay: int) -> None:
 
 
 def kick_after_delay(bot: Bot, chat: types.Chat, user_id: int) -> None:
-    async def kicking(user_id: int) -> None:
+    async def kicking() -> None:
         await asyncio.sleep(DELAY)
         reply = bot.send_message(
             chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
         kick = chat.kick(user_id)
         _cleanup = cleanup(chat, user_id)
         await asyncio.gather(reply, kick, _cleanup)
-    PURGATORY[user_id]["timer"] = asyncio.create_task(kicking(user_id))
+    PURGATORY[user_id]["timer"] = asyncio.create_task(kicking())
 
 
 def visit_purgatory(user_id: int) -> bool:
