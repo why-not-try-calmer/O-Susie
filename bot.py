@@ -5,6 +5,8 @@ from os import environ as env
 from dotenv import load_dotenv
 from urllib.parse import urljoin
 
+# config
+
 load_dotenv()
 TOKEN = env["TELEGRAM_BOT_TOKEN"]
 WEBHOOK_HOST = env["WEBHOOK_HOST"]
@@ -12,16 +14,31 @@ WEBHOOK_URL_PATH = env["WEBHOOK_ENDPOINT"] + TOKEN
 WEBHOOK_URL = urljoin(WEBHOOK_HOST, WEBHOOK_URL_PATH)
 KEY = env["KEY"]
 
+# init
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
+
+async def on_startup(_app) -> None:
+    """Simple hook for aiohttp application which manages webhook"""
+    await bot.delete_webhook()
+    await bot.set_webhook(WEBHOOK_URL)
+
+
+async def start_worker() -> None:
+    await bot.delete_webhook()
+    await dp.start_polling()
+
 """ 
-|- LOGGING -|
+LOGGING
 import logging
 logging.basicConfig(level=logging.INFO)
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 dp.middleware.setup(LoggingMiddleware())
 """
+
+# handlers
 
 
 @dp.callback_query_handler()
@@ -80,17 +97,6 @@ async def handle_messages(message: types.Message) -> None:
 @dp.message_handler(content_types=types.ContentTypes.ANY)
 async def handle_otherwise(_any) -> None:
     print(f"Silently handled: {_any}")
-
-
-async def on_startup(_app) -> None:
-    """Simple hook for aiohttp application which manages webhook"""
-    await bot.delete_webhook()
-    await bot.set_webhook(WEBHOOK_URL)
-
-
-async def start_worker() -> None:
-    await bot.delete_webhook()
-    await dp.start_polling()
 
 
 if __name__ == '__main__':

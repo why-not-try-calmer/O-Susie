@@ -9,6 +9,8 @@ from aiogram.bot.bot import Bot
 from aiogram.types.inline_keyboard import InlineKeyboardButton, InlineKeyboardMarkup
 import asyncio
 
+# emojis bytecodes
+
 emojis = {
     "robot": "\U0001F916",
     "snake": "\U0001F40D",
@@ -18,9 +20,13 @@ emojis = {
     "shark": "\U0001F988"
 }
 
+# delay before kick
+
 DELAY = 120
 DELTA = timedelta(seconds=DELAY)
 
+
+# inline keyboard
 
 def list_captcha_randomly() -> List[Tuple[str, str]]:
     return sample(list(emojis.items()), len(emojis))
@@ -44,6 +50,8 @@ def create_verification_keyboard() -> types.InlineKeyboardMarkup:
     return InlineKeyboardMarkup(3, inline_keyboard=keyboard)
 
 
+# state data
+
 @dataclass
 class UserData:
     counter: int
@@ -57,6 +65,8 @@ class ChatData:
     chat_id: int
     users: Dict[int, UserData]
 
+
+# verification workflow
 
 class Verify:
     chats_state: Dict[int, ChatData] = {}
@@ -90,8 +100,7 @@ class Verify:
             reply = bot.send_message(
                 chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
             kick = chat.kick(user_id)
-            _cleanup = Verify.cleanup(chat, user_id)
-            await asyncio.gather(reply, kick, _cleanup)
+            await asyncio.gather(reply, kick, Verify.cleanup(chat, user_id))
         Verify.chats_state[chat.id].users[user_id].timer = asyncio.create_task(
             kicking())
 
