@@ -1,4 +1,4 @@
-from verify import Verify, create_verification_keyboard, asyncio, DELAY, UserData
+from verify import ChatData, Verify, create_verification_keyboard, asyncio, DELAY, UserData
 from aiogram import Bot, Dispatcher, types
 from datetime import datetime
 from os import environ as env
@@ -81,6 +81,8 @@ async def just_joined(message: types.Message) -> None:
 
     for task in asyncio.as_completed([Verify.restrict(chat, _id) for _id in users_ids]):
         user_id = await task
+        if not chat.id in Verify.chats_state:
+            Verify.chats_state[chat.id] = ChatData(chat.id)
         Verify.chats_state[chat.id].users[user_id] = UserData(pending_messages_ids=[response_msg.message_id], joined_at=datetime.now(), counter=0)
         Verify.kick_after_delay(bot, chat, user_id)
 

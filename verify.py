@@ -63,7 +63,7 @@ class UserData:
 @dataclass
 class ChatData:
     chat_id: int
-    users: Dict[int, UserData]
+    users: Dict[int, UserData] = {}
 
 
 # verification workflow
@@ -84,6 +84,8 @@ class Verify:
         if timer := Verify.chats_state[chat.id].users[user_id].timer:
             timer.cancel()
         Verify.chats_state[chat.id].users.__delitem__(user_id)
+        if not Verify.chats_state[chat.id].users:
+            Verify.chats_state.__delitem__(chat.id)
 
     @staticmethod
     async def to_heavens(chat: types.Chat, user_id: int) -> None:
