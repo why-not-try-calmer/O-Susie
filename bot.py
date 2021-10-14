@@ -44,8 +44,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     elif visit_purgatory(user_id):
         text = "Wrong answer. Make sure you get it right now or you will get banned *forever*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-        delete_after_delay(message_id=response_msg.message_id,
-                           chat=response_msg.chat, delay=DELAY+10)
+        PURGATORY[user_id]["pending_messages"][chat_id].append(response_msg)
 
     else:
         await to_hell(cb, user_id)
@@ -56,19 +55,19 @@ async def just_joined(message: types.Message) -> None:
     chat = message.chat
     _values = [getattr(u, "_values") for u in message.new_chat_members]
     users_ids = [u["id"] for u in _values if not u["is_bot"]]
-
     response_msg = await bot.send_message(
         chat_id=message.chat.id,
         text=f"Hey, a new gecko! If you are not a bot, please answer this question within the next *{DELAY} seconds*. What emoji below resembles the openSUSE mascot the most?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard()
     )
-    delete_after_delay(message_id=response_msg.message_id,
-                       chat=response_msg.chat, delay=DELAY+10)
 
     for task in asyncio.as_completed([restrict(chat, _id) for _id in users_ids]):
         user_id = await task
-        PURGATORY[user_id] = {"joined_at": datetime.now(), "counter": 0}
+        pending_messages = {"pending_messages": {
+            message.chat.id: [response_msg]}}
+        joining_details = {"joined_at": datetime.now(), "counter": 0}
+        PURGATORY[user_id] = {**pending_messages, **joining_details}
         kick_after_delay(bot, chat, user_id)
 
 
