@@ -27,7 +27,7 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.callback_query_handler()
 async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     user_id = cb.from_user.id
-    if not user_id in PURGATORY:
+    if not user_id in Verify.chats_state[cb.message.chat.id].users:
         return
 
     chat_id = cb.message.chat.id
@@ -39,15 +39,16 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
             text=f"Welcome, _{cb.from_user.mention}_! Have a lot of fun!",
             parse_mode="Markdown"
         )
-        await asyncio.gather(replying, to_heavens(chat=cb.message.chat, user_id=user_id))
+        await asyncio.gather(replying, Verify.to_heavens(chat=cb.message.chat, user_id=user_id))
 
-    elif visit_purgatory(user_id):
+    elif Verify.visit_purgatory(chat_id, user_id):
         text = "Wrong answer. Make sure you get it right now or you will get banned *forever*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-        PURGATORY[user_id]["pending_messages"][chat_id].append(response_msg.message_id)
+        Verify.chats_state[chat_id].users[user_id].pending_messages_ids[chat_id].append(
+            response_msg.message_id)
 
     else:
-        await to_hell(cb, user_id)
+        await Verify.to_hell(cb, user_id)
 
 
 @dp.message_handler(content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
@@ -56,25 +57,23 @@ async def just_joined(message: types.Message) -> None:
     _values = [getattr(u, "_values") for u in message.new_chat_members]
     users_ids = [u["id"] for u in _values if not u["is_bot"]]
     response_msg = await bot.send_message(
-        chat_id=message.chat.id,
+        chat_id=chat.id,
         text=f"Hey, a new gecko! If you are not a bot, please answer this question within the next *{DELAY} seconds*. What emoji below resembles the openSUSE mascot the most?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard()
     )
 
-    for task in asyncio.as_completed([restrict(chat, _id) for _id in users_ids]):
+    for task in asyncio.as_completed([Verify.restrict(chat, _id) for _id in users_ids]):
         user_id = await task
-        pending_messages = {"pending_messages": {
-            message.chat.id: [response_msg.message_id]}}
-        joining_details = {"joined_at": datetime.now(), "counter": 0}
-        PURGATORY[user_id] = {**pending_messages, **joining_details}
-        kick_after_delay(bot, chat, user_id)
+        Verify.chats_state[chat.id].users[user_id] = UserData(pending_messages_ids={
+            chat.id: [response_msg.message_id]}, joined_at=datetime.now(), counter=0)
+        Verify.kick_after_delay(bot, chat, user_id)
 
 
 @dp.message_handler()
 async def handle_messages(message: types.Message) -> None:
     """ Because the bot might come online after the user has had time to send a couple of messages. """
-    if message.from_user.id in PURGATORY:
+    if message.from_user.id in Verify.chats_state[message.chat.id].users:
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 

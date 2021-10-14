@@ -1,6 +1,8 @@
+from asyncio.tasks import Task
+from dataclasses import dataclass
 from datetime import timedelta, datetime
 from functools import reduce
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 from random import sample
 from aiogram import types
 from aiogram.bot.bot import Bot
@@ -18,7 +20,6 @@ emojis = {
 
 DELAY = 120
 DELTA = timedelta(seconds=DELAY)
-PURGATORY = {}
 
 
 def list_captcha_randomly() -> List[Tuple[str, str]]:
@@ -43,51 +44,63 @@ def create_verification_keyboard() -> types.InlineKeyboardMarkup:
     return InlineKeyboardMarkup(3, inline_keyboard=keyboard)
 
 
-async def restrict(chat: types.Chat, user_id: int) -> int:
-    await chat.restrict(user_id, permissions=types.ChatPermissions(False, False, False, False, False, False, False, False))
-    return user_id
+@dataclass
+class UserData:
+    counter: int
+    pending_messages_ids: Dict[int, List[int]]
+    joined_at: datetime
+    timer: Optional[Task] = None
 
 
-async def unrestrict(chat: types.Chat, user_id: int) -> int:
-    await chat.restrict(user_id, permissions=types.ChatPermissions(True, True, True, True, False, False, False, False))
-    return user_id
+@dataclass
+class ChatData:
+    chat_id: int
+    users: Dict[int, UserData]
 
 
-def delete_after_delay(message_id: int, chat: types.Chat, delay: int) -> None:
-    async def deleting(message_id):
-        await asyncio.sleep(delay)
-        await chat.delete_message(message_id)
-        print(f"Message {message_id} in chat {chat} deleted!")
-    asyncio.create_task(deleting(message_id))
+class Verify:
+    chats_state: Dict[int, ChatData] = {}
 
+    @classmethod
+    def visit_purgatory(cls, chat_id: int, user_id: int) -> bool:
+        if cls.chats_state[chat_id].users[user_id].counter == 0 and datetime.now() - cls.chats_state[chat_id].users[user_id].joined_at < DELTA:
+            cls.chats_state[chat_id].users[user_id].counter += 1
+            return True
+        return False
 
-def kick_after_delay(bot: Bot, chat: types.Chat, user_id: int) -> None:
-    async def kicking() -> None:
-        await asyncio.sleep(DELAY)
-        reply = bot.send_message(
-            chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
-        kick = chat.kick(user_id)
-        _cleanup = cleanup(chat, user_id)
-        await asyncio.gather(reply, kick, _cleanup)
-    PURGATORY[user_id]["timer"] = asyncio.create_task(kicking())
+    @classmethod
+    async def cleanup(cls, chat: types.Chat, user_id: int) -> None:
+        await asyncio.gather(*[chat.delete_message(m_id) for m_id in cls.chats_state[chat.id].users[user_id].pending_messages_ids[chat.id]])
+        if timer := cls.chats_state[chat.id].users[user_id].timer:
+            timer.cancel()
+        cls.chats_state[chat.id].users.__delitem__(user_id)
 
+    @classmethod
+    async def to_heavens(cls, chat: types.Chat, user_id: int) -> None:
+        await asyncio.gather(Verify.unrestrict(chat=chat, user_id=user_id), cls.cleanup(chat, user_id))
 
-def visit_purgatory(user_id: int) -> bool:
-    if PURGATORY[user_id]["counter"] == 0 and datetime.now() - PURGATORY[user_id]["joined_at"] < DELTA:
-        PURGATORY[user_id]["counter"] += 1
-        return True
-    return False
+    @classmethod
+    async def to_hell(cls, cb: types.CallbackQuery, user_id: int) -> None:
+        await asyncio.gather(cb.message.chat.kick(user_id), cls.cleanup(cb.message.chat, user_id))
 
+    @classmethod
+    def kick_after_delay(cls, bot: Bot, chat: types.Chat, user_id: int) -> None:
+        async def kicking() -> None:
+            await asyncio.sleep(DELAY)
+            reply = bot.send_message(
+                chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
+            kick = chat.kick(user_id)
+            _cleanup = cls.cleanup(chat, user_id)
+            await asyncio.gather(reply, kick, _cleanup)
+        cls.chats_state[chat.id].users[user_id].timer = asyncio.create_task(
+            kicking())
 
-async def cleanup(chat: types.Chat, user_id: int) -> None:
-    await asyncio.gather(*[chat.delete_message(m_id) for m_id in PURGATORY[user_id]["pending_messages"][chat.id]])
-    PURGATORY[user_id]["timer"].cancel()
-    PURGATORY.__delitem__(user_id)
+    @staticmethod
+    async def restrict(chat: types.Chat, user_id: int) -> int:
+        await chat.restrict(user_id, permissions=types.ChatPermissions(False, False, False, False, False, False, False, False))
+        return user_id
 
-
-async def to_heavens(chat: types.Chat, user_id: int) -> None:
-    await asyncio.gather(unrestrict(chat=chat, user_id=user_id), cleanup(chat, user_id))
-
-
-async def to_hell(cb: types.CallbackQuery, user_id: int) -> None:
-    await asyncio.gather(cb.message.chat.kick(user_id), cleanup(cb.message.chat, user_id))
+    @staticmethod
+    async def unrestrict(chat: types.Chat, user_id: int) -> int:
+        await chat.restrict(user_id, permissions=types.ChatPermissions(True, True, True, True, False, False, False, False))
+        return user_id
