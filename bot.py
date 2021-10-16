@@ -44,7 +44,7 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.callback_query_handler()
 async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     user_id = cb.from_user.id
-    if not user_id in Verify.chats_state[cb.message.chat.id].users:
+    if cb.message.chat.id in Verify.chats_state and not user_id in Verify.chats_state[cb.message.chat.id].users:
         return
 
     chat_id = cb.message.chat.id
@@ -90,6 +90,8 @@ async def just_joined(message: types.Message) -> None:
 @dp.message_handler()
 async def handle_messages(message: types.Message) -> None:
     """ Because the bot might come online after the user has had time to send a couple of messages. """
+    if not message.chat.id in Verify.chats_state or not Verify.chats_state[message.chat.id].users:
+        return
     if message.from_user.id in Verify.chats_state[message.chat.id].users:
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
