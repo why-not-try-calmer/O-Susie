@@ -69,27 +69,29 @@ class ChatData:
 # verification workflow
 
 class Verify:
-    chats_state: Dict[int, ChatData] = {}
-
+    unverified: Dict[int, ChatData] = {}
+    verified: List[int] = []
+    
     @staticmethod
     def visit_purgatory(chat_id: int, user_id: int) -> bool:
-        if Verify.chats_state[chat_id].users[user_id].counter == 0 and datetime.now() - Verify.chats_state[chat_id].users[user_id].joined_at < DELTA:
-            Verify.chats_state[chat_id].users[user_id].counter += 1
+        if Verify.unverified[chat_id].users[user_id].counter == 0 and datetime.now() - Verify.unverified[chat_id].users[user_id].joined_at < DELTA:
+            Verify.unverified[chat_id].users[user_id].counter += 1
             return True
         return False
 
     @staticmethod
     async def cleanup(chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.chats_state[chat.id].users[user_id].pending_messages_ids])
-        if timer := Verify.chats_state[chat.id].users[user_id].timer:
+        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.unverified[chat.id].users[user_id].pending_messages_ids])
+        if timer := Verify.unverified[chat.id].users[user_id].timer:
             timer.cancel()
-        Verify.chats_state[chat.id].users.__delitem__(user_id)
-        if not Verify.chats_state[chat.id].users:
-            Verify.chats_state.__delitem__(chat.id)
+        Verify.unverified[chat.id].users.__delitem__(user_id)
+        if not Verify.unverified[chat.id].users:
+            Verify.unverified.__delitem__(chat.id)
 
     @staticmethod
     async def to_heavens(chat: types.Chat, user_id: int) -> None:
         await asyncio.gather(Verify.unrestrict(chat=chat, user_id=user_id), Verify.cleanup(chat, user_id))
+        Verify.verified.append(user_id)
 
     @staticmethod
     async def to_hell(cb: types.CallbackQuery, user_id: int) -> None:
@@ -103,7 +105,7 @@ class Verify:
                 chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
             kick = chat.kick(user_id)
             await asyncio.gather(reply, kick, Verify.cleanup(chat, user_id))
-        Verify.chats_state[chat.id].users[user_id].timer = asyncio.create_task(
+        Verify.unverified[chat.id].users[user_id].timer = asyncio.create_task(
             kicking())
 
     @staticmethod
