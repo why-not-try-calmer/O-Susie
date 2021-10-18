@@ -71,6 +71,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
 async def just_joined(message: types.Message) -> None:
     user_id = message.from_user.id
     if user_id in Verify.verified or (message.chat.id in Verify.unverified and user_id in Verify.unverified[message.chat.id].users):
+        print(f"Excused user rejoining with{str(Verify.unverified)} and {str(Verify.unverified[message.chat.id])}")
         return
     chat = message.chat
     values = [getattr(u, "_values") for u in message.new_chat_members]
