@@ -44,9 +44,9 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.callback_query_handler()
 async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     user_id = cb.from_user.id
-    if not user_id in Verify.chats_state[cb.message.chat.id].users:
+    if user_id in Verify.verified or not cb.message.chat.id in Verify.unverified or not user_id in Verify.unverified[cb.message.chat.id].users:
         return
-
+    
     chat_id = cb.message.chat.id
     key = cb.data
 
@@ -61,7 +61,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     elif Verify.visit_purgatory(chat_id, user_id):
         text = "Wrong answer. Make sure you get it right now or you will get banned *forever*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-        Verify.chats_state[chat_id].users[user_id].pending_messages_ids.append(response_msg.message_id)
+        Verify.unverified[chat_id].users[user_id].pending_messages_ids.append(response_msg.message_id)
 
     else:
         await Verify.to_hell(cb, user_id)
@@ -69,6 +69,9 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
 
 @dp.message_handler(content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def just_joined(message: types.Message) -> None:
+    user_id = message.from_user.id
+    if user_id in Verify.verified or (message.chat.id in Verify.unverified and user_id in Verify.unverified[message.chat.id].users):
+        return
     chat = message.chat
     values = [getattr(u, "_values") for u in message.new_chat_members]
     users_ids = [u["id"] for u in values if not u["is_bot"]]
@@ -81,16 +84,19 @@ async def just_joined(message: types.Message) -> None:
 
     for task in asyncio.as_completed([Verify.restrict(chat, _id) for _id in users_ids]):
         user_id = await task
-        if not chat.id in Verify.chats_state:
-            Verify.chats_state[chat.id] = ChatData(chat.id)
-        Verify.chats_state[chat.id].users[user_id] = UserData(pending_messages_ids=[response_msg.message_id], joined_at=datetime.now(), counter=0)
+        if not chat.id in Verify.unverified:
+            Verify.unverified[chat.id] = ChatData(chat.id)
+        Verify.unverified[chat.id].users[user_id] = UserData(pending_messages_ids=[response_msg.message_id], joined_at=datetime.now(), counter=0)
         Verify.kick_after_delay(bot, chat, user_id)
 
 
 @dp.message_handler()
 async def handle_messages(message: types.Message) -> None:
     """ Because the bot might come online after the user has had time to send a couple of messages. """
-    if message.from_user.id in Verify.chats_state[message.chat.id].users:
+    user_id = message.from_user.id
+    if not message.chat.id in Verify.unverified or not user_id in Verify.unverified[message.chat.id].users:
+        return
+    if user_id in Verify.unverified[message.chat.id].users:
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 
