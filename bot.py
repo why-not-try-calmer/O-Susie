@@ -91,12 +91,12 @@ if __name__ == '__main__':
         from aiogram.utils import executor
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config['WEBHOOK_URL_PATH'],
+            webhook_path=config['webhook_url_path'],
             loop=loop,
             skip_updates=True,
             on_startup=on_startup,
-            host=config['HOST'],
-            port=config['PORT']
+            host=config['host'],
+            port=config['port']
         )
     else:
         print(f"Called with {argv}, running as long-polling worker.")
