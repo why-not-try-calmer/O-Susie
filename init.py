@@ -25,5 +25,5 @@ config = {
     "delta": timedelta(seconds=DELAY)
 }
 
-bot = Bot(token=env["TOKEN"])
+bot = Bot(token=env["TELEGRAM_BOT_TOKEN"])
 dp = Dispatcher(bot)
