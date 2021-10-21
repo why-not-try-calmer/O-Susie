@@ -5,13 +5,13 @@ from aiogram.utils.markdown import code
 
 from verify import *
 from verify import Status
-from init import *
+from init import config, bot, dp
 
 
 async def on_startup(app) -> None:
     """Simple hook for aiohttp application which manages webhook"""
     await bot.delete_webhook()
-    await bot.set_webhook(WEBHOOK_URL)
+    await bot.set_webhook(config['WEBHOOK_URL'])
 
 
 async def start_worker() -> None:
@@ -30,7 +30,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     if not Verify.can_verify(chat_id, user_id):
         return
 
-    if key == KEY:
+    if key == config['KEY']:
         await Verify.authorize(chat=cb.message.chat, user_id=user_id)
         text = f"Welcome, _{cb.from_user.full_name}_ Have a lot of fun!"
         print(text)
@@ -59,7 +59,7 @@ async def just_joined(message: types.Message) -> None:
     uids = [u["id"] for u in values if not u["is_bot"]]
     response_msg = await bot.send_message(
         chat_id=chat.id,
-        text=f"Heya [{message.from_user.mention}](tg://user?id={user_id})! If you are not a bot, please answer this question within the next *{DELAY} seconds*. What emoji below resembles the openSUSE mascot the most?",
+        text=f"Heya [{message.from_user.mention}](tg://user?id={user_id})! If you are not a bot, please answer this question within the next *{config['delay']} seconds*. What emoji below resembles the openSUSE mascot the most?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard(),
     )
@@ -91,12 +91,12 @@ if __name__ == '__main__':
         from aiogram.utils import executor
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=WEBHOOK_URL_PATH,
+            webhook_path=config['WEBHOOK_URL_PATH'],
             loop=loop,
             skip_updates=True,
             on_startup=on_startup,
-            host=HOST,
-            port=PORT
+            host=config['HOST'],
+            port=config['PORT']
         )
     else:
         print(f"Called with {argv}, running as long-polling worker.")

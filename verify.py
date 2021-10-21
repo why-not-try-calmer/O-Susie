@@ -1,6 +1,6 @@
 from asyncio.tasks import Task
 from dataclasses import dataclass, field
-from datetime import timedelta, datetime
+from datetime import datetime
 from functools import reduce
 from typing import Dict, List, Optional, Tuple
 from random import sample
@@ -8,6 +8,8 @@ from aiogram import types
 from aiogram.bot.bot import Bot
 from aiogram.types.inline_keyboard import InlineKeyboardButton, InlineKeyboardMarkup
 import asyncio
+
+from init import config
 
 # emojis bytecodes
 
@@ -19,11 +21,6 @@ emojis = {
     "clown": "\U0001F921",
     "shark": "\U0001F988"
 }
-
-# delay before kick
-
-DELAY = 120
-DELTA = timedelta(seconds=DELAY)
 
 
 # inline keyboard
@@ -50,62 +47,80 @@ def create_verification_keyboard() -> types.InlineKeyboardMarkup:
     return InlineKeyboardMarkup(3, inline_keyboard=keyboard)
 
 
-# state data
+@dataclass
+class Status:
+    just_joined = "just_joined"
+    challenged_to_verify = "challenged_to_verify"
+    verified = "verified"
+    banned = "banned"
+
 
 @dataclass
-class UserData:
-    counter: int
+class User:
+    status: str
     pending_messages_ids: List[int]
     joined_at: datetime
-    timer: Optional[Task] = None
+    attempts: int = 0
+    scheduled_reject: Optional[Task] = None
 
 
 @dataclass
-class ChatData:
+class Chat:
     chat_id: int
-    users: Dict[int, UserData] = field(default_factory=dict)
+    users: Dict[int, User] = field(default_factory=dict)
 
 
 # verification workflow
 
 class Verify:
-    unverified: Dict[int, ChatData] = {}
-    verified: List[int] = []
-    
+    chats: Dict[int, Chat] = {}
+
     @staticmethod
-    def visit_purgatory(chat_id: int, user_id: int) -> bool:
-        if Verify.unverified[chat_id].users[user_id].counter == 0 and datetime.now() - Verify.unverified[chat_id].users[user_id].joined_at < DELTA:
-            Verify.unverified[chat_id].users[user_id].counter += 1
+    def can_verify(chat_id: int, user_id: int) -> bool:
+        if not chat_id in Verify.chats or not user_id in Verify.chats[chat_id].users:
+            return False
+        if Verify.chats[chat_id].users[user_id].status != Status.challenged_to_verify:
+            return False
+        return True
+
+    @staticmethod
+    def can_request_verification(chat_id: int, user_id: int) -> bool:
+        if not chat_id in Verify.chats or not user_id in Verify.chats[chat_id].users or Verify.chats[chat_id].users[user_id].status == Status.challenged_to_verify:
             return True
         return False
 
     @staticmethod
-    async def cleanup(chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(*[chat.delete_message(m_id) for m_id in Verify.unverified[chat.id].users[user_id].pending_messages_ids])
-        if timer := Verify.unverified[chat.id].users[user_id].timer:
-            timer.cancel()
-        Verify.unverified[chat.id].users.__delitem__(user_id)
-        if not Verify.unverified[chat.id].users:
-            Verify.unverified.__delitem__(chat.id)
+    def has_last_chance(chat_id: int, user_id: int) -> bool:
+        if Verify.chats[chat_id].users[user_id].attempts == 0 and datetime.now() - Verify.chats[chat_id].users[user_id].joined_at < config['delta']:
+            Verify.chats[chat_id].users[user_id].attempts += 1
+            return True
+        return False
 
     @staticmethod
-    async def to_heavens(chat: types.Chat, user_id: int) -> None:
-        await asyncio.gather(Verify.unrestrict(chat=chat, user_id=user_id), Verify.cleanup(chat, user_id))
-        Verify.verified.append(user_id)
+    async def authorize(chat: types.Chat, user_id: int) -> None:
+        setattr(Verify.chats[chat.id].users[user_id],
+                "status", Status.verified)
+        if task := Verify.chats[chat.id].users[user_id].scheduled_reject:
+            task.cancel()
+        await Verify.unrestrict(chat=chat, user_id=user_id)
+        await asyncio.gather(*[chat.delete_message(t) for t in Verify.chats[chat.id].users[user_id].pending_messages_ids])
 
     @staticmethod
-    async def to_hell(cb: types.CallbackQuery, user_id: int) -> None:
-        await asyncio.gather(cb.message.chat.kick(user_id), Verify.cleanup(cb.message.chat, user_id))
+    async def reject(chat: types.Chat, user_id: int) -> None:
+        setattr(Verify.chats[chat.id].users[user_id], "status", Status.banned)
+        await asyncio.gather(chat.kick(user_id), *[chat.delete_message(t) for t in Verify.chats[chat.id].users[user_id].pending_messages_ids])
+        if task := Verify.chats[chat.id].users[user_id].scheduled_reject:
+            task.cancel()
+        Verify.chats[chat.id].users.__delitem__(user_id)
 
     @staticmethod
-    def kick_after_delay(bot: Bot, chat: types.Chat, user_id: int) -> None:
+    def schedule_reject(bot: Bot, chat: types.Chat, user_id: int) -> None:
         async def kicking() -> None:
-            await asyncio.sleep(DELAY)
+            await asyncio.sleep(config['delay'])
             reply = bot.send_message(
-                chat_id=chat.id, text=f"Time elapsed, kicked {user_id}")
-            kick = chat.kick(user_id)
-            await asyncio.gather(reply, kick, Verify.cleanup(chat, user_id))
-        Verify.unverified[chat.id].users[user_id].timer = asyncio.create_task(
+                chat_id=chat.id, text=f"Temps écoulé, éjecté cet utilisateur: {user_id}")
+            await asyncio.gather(reply, Verify.reject(chat, user_id))
+        Verify.chats[chat.id].users[user_id].scheduled_reject = asyncio.create_task(
             kicking())
 
     @staticmethod
@@ -117,3 +132,6 @@ class Verify:
     async def unrestrict(chat: types.Chat, user_id: int) -> int:
         await chat.restrict(user_id, permissions=types.ChatPermissions(True, True, True, True, False, False, False, False))
         return user_id
+
+
+__all__ = ["Chat", "Verify", "create_verification_keyboard", "User"]
