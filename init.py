@@ -13,12 +13,12 @@ config = {
     "port": int(env.get('PORT', 8080)),
     "host":"0.0.0.0",
     "emojis": {
-        "church": "\U000026EA",
-        "hospital": "\U0001F3E5",
-        "wheel": "\U0001F3A1",
-        "station": "\U0001F689",
-        "bank": "\U0001F3E6",
-        "post": "\U0001F3E4"
+        "robot": "\U0001F916",
+        "snake": "\U0001F40D",
+        "alien": "\U0001F47D",
+        "gecko": "\U0001F98E",
+        "clown": "\U0001F921",
+        "shark": "\U0001F988"
     },
     "delay": DELAY,
     "delta": timedelta(seconds=DELAY)

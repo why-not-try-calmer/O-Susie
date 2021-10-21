@@ -11,22 +11,10 @@ import asyncio
 
 from init import config
 
-# emojis bytecodes
-
-emojis = {
-    "robot": "\U0001F916",
-    "snake": "\U0001F40D",
-    "alien": "\U0001F47D",
-    "gecko": "\U0001F98E",
-    "clown": "\U0001F921",
-    "shark": "\U0001F988"
-}
-
-
 # inline keyboard
 
 def list_captcha_randomly() -> List[Tuple[str, str]]:
-    return sample(list(emojis.items()), len(emojis))
+    return sample(list(config['emojis'].items()), len(config['emojis']))
 
 
 def rows_of_3(buttons: List[InlineKeyboardButton]) -> List[List[InlineKeyboardButton]]:
