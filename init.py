@@ -5,10 +5,11 @@ from os import environ as env
 
 DELAY = 120
 
+
 config = {
     "webhook_host": env["WEBHOOK_HOST"],
     "webhook_url_path": env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"],
-    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_URL_PATH"]),
+    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"]),
     "key": env["KEY"],
     "port": int(env.get('PORT', 8080)),
     "host":"0.0.0.0",
