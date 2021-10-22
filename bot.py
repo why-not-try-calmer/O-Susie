@@ -7,6 +7,8 @@ from verify import *
 from verify import Status
 from init import config, bot, dp
 
+# init
+
 
 async def on_startup(app) -> None:
     """Simple hook for aiohttp application which manages webhook"""
@@ -82,6 +84,7 @@ async def just_joined(message: types.Message) -> None:
 @dp.message_handler(content_types=types.ContentTypes.ANY)
 async def handle_otherwise(_any) -> None:
     print(f"Silently handled: {_any}")
+
 
 if __name__ == '__main__':
     from sys import argv
