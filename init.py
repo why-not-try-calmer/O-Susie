@@ -27,3 +27,5 @@ config = {
 
 bot = Bot(token=env["TELEGRAM_BOT_TOKEN"])
 dp = Dispatcher(bot)
+
+__all__ = ["dp", "bot", "config"]

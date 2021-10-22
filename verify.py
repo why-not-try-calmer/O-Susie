@@ -65,17 +65,13 @@ class Verify:
 
     @staticmethod
     def can_verify(chat_id: int, user_id: int) -> bool:
-        if not chat_id in Verify.chats or not user_id in Verify.chats[chat_id].users:
-            return False
-        if Verify.chats[chat_id].users[user_id].status != Status.challenged_to_verify:
+        if not chat_id in Verify.chats or not user_id in Verify.chats[chat_id].users or Verify.chats[chat_id].users[user_id].status != Status.challenged_to_verify:
             return False
         return True
 
     @staticmethod
     def can_request_verification(chat_id: int, user_id: int) -> bool:
-        if not chat_id in Verify.chats or not user_id in Verify.chats[chat_id].users or Verify.chats[chat_id].users[user_id].status == Status.challenged_to_verify:
-            return True
-        return False
+        return not Verify.can_verify(chat_id, user_id)
 
     @staticmethod
     def has_last_chance(chat_id: int, user_id: int) -> bool:
@@ -86,17 +82,17 @@ class Verify:
 
     @staticmethod
     async def authorize(chat: types.Chat, user_id: int) -> None:
-        setattr(Verify.chats[chat.id].users[user_id],
-                "status", Status.verified)
+        setattr(Verify.chats[chat.id].users[user_id],"status", Status.verified)
         if task := Verify.chats[chat.id].users[user_id].scheduled_reject:
             task.cancel()
         await Verify.unrestrict(chat=chat, user_id=user_id)
         await asyncio.gather(*[chat.delete_message(t) for t in Verify.chats[chat.id].users[user_id].pending_messages_ids])
 
     @staticmethod
-    async def reject(chat: types.Chat, user_id: int) -> None:
+    async def reject(bot: Bot, chat: types.Chat, user_id: int) -> None:
         setattr(Verify.chats[chat.id].users[user_id], "status", Status.banned)
-        await asyncio.gather(chat.kick(user_id), *[chat.delete_message(t) for t in Verify.chats[chat.id].users[user_id].pending_messages_ids])
+        await bot.ban_chat_member(chat.id, user_id)
+        await asyncio.gather(*[chat.delete_message(t) for t in Verify.chats[chat.id].users[user_id].pending_messages_ids])
         if task := Verify.chats[chat.id].users[user_id].scheduled_reject:
             task.cancel()
         Verify.chats[chat.id].users.__delitem__(user_id)
@@ -107,7 +103,7 @@ class Verify:
             await asyncio.sleep(config['delay'])
             reply = bot.send_message(
                 chat_id=chat.id, text=f"Temps écoulé, éjecté cet utilisateur: {user_id}")
-            await asyncio.gather(reply, Verify.reject(chat, user_id))
+            await asyncio.gather(reply, Verify.reject(bot, chat, user_id))
         Verify.chats[chat.id].users[user_id].scheduled_reject = asyncio.create_task(
             kicking())
 

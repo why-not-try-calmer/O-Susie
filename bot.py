@@ -11,7 +11,7 @@ from init import config, bot, dp
 async def on_startup(app) -> None:
     """Simple hook for aiohttp application which manages webhook"""
     await bot.delete_webhook()
-    await bot.set_webhook(config['WEBHOOK_URL'])
+    await bot.set_webhook(config['webhook_url'])
 
 
 async def start_worker() -> None:
@@ -20,6 +20,7 @@ async def start_worker() -> None:
 
 
 # handlers
+
 
 @dp.callback_query_handler()
 async def pressed_verification_button(cb: types.CallbackQuery) -> None:
@@ -30,10 +31,9 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     if not Verify.can_verify(chat_id, user_id):
         return
 
-    if key == config['KEY']:
+    if key == config['key']:
         await Verify.authorize(chat=cb.message.chat, user_id=user_id)
-        text = f"Welcome, _{cb.from_user.full_name}_ Have a lot of fun!"
-        print(text)
+        text = f"Bienvenue, {code(cb.from_user.full_name)}!"
         await bot.send_message(
             chat_id=chat_id,
             text=text,
@@ -41,28 +41,31 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
         )
 
     elif Verify.has_last_chance(chat_id, user_id):
-        text = "Wrong answer. Make sure you get it right now or you will get banned *forever*."
+        text = "Réponse erronée. Assurez-vous de répondre correctement ou subissez un bannissement *permanent*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
         Verify.chats[chat_id].users[user_id].pending_messages_ids.append(
             response_msg.message_id)
     else:
-        await Verify.reject(cb.message.chat, user_id)
+        await Verify.reject(bot, cb.message.chat, user_id)
 
 
 @dp.message_handler(content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def just_joined(message: types.Message) -> None:
     user_id = message.from_user.id
     chat = message.chat
+
     if not Verify.can_request_verification(chat.id, user_id):
         return
+
     values = [getattr(u, "_values") for u in message.new_chat_members]
     uids = [u["id"] for u in values if not u["is_bot"]]
     response_msg = await bot.send_message(
         chat_id=chat.id,
-        text=f"Heya [{message.from_user.mention}](tg://user?id={user_id})! If you are not a bot, please answer this question within the next *{config['delay']} seconds*. What emoji below resembles the openSUSE mascot the most?",
+        text=f"Bonjour [{message.from_user.mention}](tg://user?id={user_id})! Merci de répondre à la question suivante dans le délai imparti (*{config['delay']} secondes*). Lequel de ces emojis ne représente *pas* un lieu public présent à Fribourg?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard(),
     )
+
     for task in asyncio.as_completed([Verify.restrict(chat, _id) for _id in uids]):
         uid = await task
         if not chat.id in Verify.chats:
