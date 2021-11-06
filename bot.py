@@ -35,7 +35,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
 
     if key == config['key']:
         await Verify.authorize(chat=cb.message.chat, user_id=user_id)
-        text = f"Bienvenue, {code(cb.from_user.full_name)}!"
+        text = f"Welcome {code(cb.from_user.full_name)}, have a lot of fun!"
         await bot.send_message(
             chat_id=chat_id,
             text=text,
@@ -43,7 +43,7 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
         )
 
     elif Verify.has_last_chance(chat_id, user_id):
-        text = "Réponse erronée. Assurez-vous de répondre correctement ou subissez un bannissement *permanent*."
+        text = "Incorrect answer. Make sure to get it right next time or you will be banned *permanently*."
         response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
         Verify.chats[chat_id].users[user_id].pending_messages_ids.append(
             response_msg.message_id)
@@ -63,7 +63,7 @@ async def just_joined(message: types.Message) -> None:
     uids = [u["id"] for u in values if not u["is_bot"]]
     response_msg = await bot.send_message(
         chat_id=chat.id,
-        text=f"Bonjour [{message.from_user.mention}](tg://user?id={user_id})! Merci de répondre à la question suivante dans le délai imparti (*{config['delay']} secondes*). Lequel de ces emojis ne représente *pas* un lieu public présent à Fribourg?",
+        text=f"Hi [{message.from_user.mention}](tg://user?id={user_id})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard(),
     )
