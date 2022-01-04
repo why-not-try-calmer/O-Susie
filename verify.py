@@ -102,7 +102,7 @@ class Verify:
         async def kicking() -> None:
             await asyncio.sleep(config['delay'])
             reply = bot.send_message(
-                chat_id=chat.id, text=f"Temps écoulé, éjecté cet utilisateur: {user_id}")
+                chat_id=chat.id, text=f"Time elapsed, kicked user {user_id}")
             await asyncio.gather(reply, Verify.reject(bot, chat, user_id))
         Verify.chats[chat.id].users[user_id].scheduled_reject = asyncio.create_task(
             kicking())
