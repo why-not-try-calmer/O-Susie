@@ -61,6 +61,10 @@ async def just_joined(message: types.Message) -> None:
 
     values = [getattr(u, "_values") for u in message.new_chat_members]
     uids = [u["id"] for u in values if not u["is_bot"]]
+    
+    if not uids:
+        return
+    
     response_msg = await bot.send_message(
         chat_id=chat.id,
         text=f"Hi [{message.from_user.mention}](tg://user?id={user_id})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
