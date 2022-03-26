@@ -11,7 +11,7 @@ config = {
     "webhook_url_path": env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"],
     "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"]),
     "key": env["KEY"],
-    "port": int(env.get('PORT', 8080)),
+    "port": int(env.get("PORT", 3001)),
     "host":"0.0.0.0",
     "emojis": {
         "robot": "\U0001F916",

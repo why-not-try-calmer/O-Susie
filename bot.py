@@ -94,8 +94,8 @@ async def handle_otherwise(_any) -> None:
 if __name__ == '__main__':
     from sys import argv
     import uvloop
-    uvloop.install()
-    loop = asyncio.get_event_loop()
+    loop = uvloop.new_event_loop()
+    asyncio.set_event_loop(loop)
     if len(argv) >= 2 and "--webhook" in argv:
         print(
             f"Called with {argv}, running as aiohttp server after setting webhook.")
@@ -103,7 +103,6 @@ if __name__ == '__main__':
         executor.start_webhook(
             dispatcher=dp,
             webhook_path=config['webhook_url_path'],
-            loop=loop,
             skip_updates=True,
             on_startup=on_startup,
             host=config['host'],

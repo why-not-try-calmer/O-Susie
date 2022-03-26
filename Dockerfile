@@ -1,6 +1,6 @@
 FROM python:3.10
 
-EXPOSE 80
+EXPOSE 3001
 
 RUN mkdir /opt/app
 WORKDIR /opt/app
