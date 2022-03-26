@@ -53,7 +53,8 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
 
 @dp.message_handler(content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def just_joined(message: types.Message) -> None:
-    user_id = message.from_user.id
+    user_id: int = message.from_user.id
+    user_name: str = message.from_user.username or message.from_user.full_name
     chat = message.chat
 
     if not Verify.can_request_verification(chat.id, user_id):
@@ -67,7 +68,7 @@ async def just_joined(message: types.Message) -> None:
     
     response_msg = await bot.send_message(
         chat_id=chat.id,
-        text=f"Hi [{message.from_user.mention}](tg://user?id={user_id})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
+        text=f"Hi [{user_name}](tg://user?id={str(user_id)})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
         parse_mode="Markdown",
         reply_markup=create_verification_keyboard(),
     )
