@@ -13,7 +13,7 @@ from init import config, bot, dp
 async def on_startup(app) -> None:
     """Simple hook for aiohttp application which manages webhook"""
     await bot.delete_webhook()
-    await bot.set_webhook(config['webhook_url'])
+    await bot.set_webhook(config["webhook_url"])
 
 
 async def start_worker() -> None:
@@ -33,20 +33,19 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     if not Verify.can_verify(chat_id, user_id):
         return
 
-    if key == config['key']:
+    if key == config["key"]:
         await Verify.authorize(chat=cb.message.chat, user_id=user_id)
         text = f"Welcome {code(cb.from_user.full_name)}, have a lot of fun!"
-        await bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            parse_mode="Markdown"
-        )
+        await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
 
     elif Verify.has_last_chance(chat_id, user_id):
         text = "Incorrect answer. Make sure to get it right next time or you will be banned *permanently*."
-        response_msg = await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+        response_msg = await bot.send_message(
+            chat_id=chat_id, text=text, parse_mode="Markdown"
+        )
         Verify.chats[chat_id].users[user_id].pending_messages_ids.append(
-            response_msg.message_id)
+            response_msg.message_id
+        )
     else:
         await Verify.reject(bot, cb.message.chat, user_id)
 
@@ -62,10 +61,10 @@ async def just_joined(message: types.Message) -> None:
 
     values = [getattr(u, "_values") for u in message.new_chat_members]
     uids = [u["id"] for u in values if not u["is_bot"]]
-    
+
     if not uids:
         return
-    
+
     response_msg = await bot.send_message(
         chat_id=chat.id,
         text=f"Hi [@{user_name}](tg://user?id={str(user_id)})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
@@ -81,7 +80,7 @@ async def just_joined(message: types.Message) -> None:
             pending_messages_ids=[response_msg.message_id],
             joined_at=datetime.now(),
             attempts=0,
-            status=Status.challenged_to_verify
+            status=Status.challenged_to_verify,
         )
         Verify.schedule_reject(bot, chat, uid)
 
@@ -91,22 +90,25 @@ async def handle_otherwise(_any) -> None:
     print(f"Silently handled: {_any}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from sys import argv
     import uvloop
+
     loop = uvloop.new_event_loop()
     asyncio.set_event_loop(loop)
     if len(argv) >= 2 and "--webhook" in argv:
         print(
-            f"Called with {argv}, running as aiohttp server after setting webhook.")
+            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, webhook_path: {config['webhook_url_path']}, host: {config['webhook_host']}."
+        )
         from aiogram.utils import executor
+
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config['webhook_url_path'],
+            webhook_path=config["webhook_url_path"],
             skip_updates=True,
             on_startup=on_startup,
-            host=config['host'],
-            port=config['port']
+            host=config["host"],
+            port=config["port"],
         )
     else:
         print(f"Called with {argv}, running as long-polling worker.")
