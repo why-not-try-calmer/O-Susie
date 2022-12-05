@@ -1,11 +1,12 @@
-from datetime import datetime
 import asyncio
+from datetime import datetime
+
 from aiogram import types
 from aiogram.utils.markdown import code
 
+from init import bot, config, dp
 from verify import *
 from verify import Status
-from init import config, bot, dp
 
 # init
 
@@ -92,19 +93,21 @@ async def handle_otherwise(_any) -> None:
 
 if __name__ == "__main__":
     from sys import argv
+
     import uvloop
 
     loop = uvloop.new_event_loop()
     asyncio.set_event_loop(loop)
+
     if len(argv) >= 2 and "--webhook" in argv:
         print(
-            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, webhook_path: {config['webhook_path']}, host: {config['webhook_host']}."
+            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, host: {config['webhook_host']}."
         )
         from aiogram.utils import executor
 
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config["webhook_path"],
+            webhook_path=f"/osusie/bot{config['token']}",
             skip_updates=True,
             on_startup=on_startup,
             host=config["host"],
