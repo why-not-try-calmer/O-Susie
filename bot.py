@@ -5,6 +5,7 @@ from aiogram import types
 from aiogram.utils.markdown import code
 
 from init import bot, config, dp
+from utils import try_sending_message
 from verify import *
 from verify import Status
 
@@ -37,11 +38,11 @@ async def pressed_verification_button(cb: types.CallbackQuery) -> None:
     if key == config["key"]:
         await Verify.authorize(chat=cb.message.chat, user_id=user_id)
         text = f"Welcome {code(cb.from_user.full_name)}, have a lot of fun!"
-        await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+        await try_sending_message(bot, chat_id=chat_id, text=text, parse_mode="Markdown")
 
     elif Verify.has_last_chance(chat_id, user_id):
         text = "Incorrect answer. Make sure to get it right next time or you will be banned *permanently*."
-        response_msg = await bot.send_message(
+        response_msg = await try_sending_message(bot,
             chat_id=chat_id, text=text, parse_mode="Markdown"
         )
         Verify.chats[chat_id].users[user_id].pending_messages_ids.append(
@@ -66,7 +67,8 @@ async def just_joined(message: types.Message) -> None:
     if not uids:
         return
 
-    response_msg = await bot.send_message(
+    response_msg = await try_sending_message(
+        bot,
         chat_id=chat.id,
         text=f"Hi [@{user_name}](tg://user?id={str(user_id)})! Please answer the question below within the next (*{config['delay']} seconds*). Which emoji below represents an animal often associated with openSUSE?",
         parse_mode="Markdown",
