@@ -9,7 +9,7 @@ DELAY = 120
 config = {
     "host": env["HOST"],
     "endpoint": env["ENDPOINT"],
-    "webhook_url": f"{env['HOST']}/{env['ENDPOINT']}/bot{env['TOKEN']}",
+    "webhook_url": f"{env['HOST']}{env['ENDPOINT']}/bot{env['TOKEN']}",
     "token": env['TOKEN'],
     "key": env["KEY"],
     "app_port": int(env.get("PORT", 3001)),
