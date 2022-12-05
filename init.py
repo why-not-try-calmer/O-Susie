@@ -1,6 +1,5 @@
 from datetime import timedelta
 from os import environ as env
-from urllib.parse import urljoin
 
 from aiogram import Bot, Dispatcher
 
@@ -10,7 +9,7 @@ DELAY = 120
 config = {
     "webhook_host": env["WEBHOOK_HOST"],
     "webhook_url_path": f"{env['WEBHOOK_ENDPOINT']}/bot{env['TOKEN']}",
-    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"], f"bot{env['TOKEN']}"),
+    "webhook_url": f"{env['WEBHOOK_HOST']}{env['WEBHOOK_ENDPOINT']}/bot{env['TOKEN']}",
     "token": env['TOKEN'],
     "key": env["KEY"],
     "port": int(env.get("PORT", 3001)),
