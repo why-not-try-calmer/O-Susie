@@ -9,8 +9,8 @@ DELAY = 120
 
 config = {
     "webhook_host": env["WEBHOOK_HOST"],
-    "webhook_url_path": env["WEBHOOK_ENDPOINT"] + env["TOKEN"],
-    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"] + env["TOKEN"]),
+    "webhook_url_path": f"{env['WEBHOOK_ENDPOINT']}/bot{env['TOKEN']}",
+    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"], f"bot{env['TOKEN']}"),
     "token": env['TOKEN'],
     "key": env["KEY"],
     "port": int(env.get("PORT", 3001)),
