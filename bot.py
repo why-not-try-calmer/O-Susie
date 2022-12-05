@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config['endpoint'],
+            webhook_path=config['webhook_path'],
             skip_updates=True,
             on_startup=on_startup,
             host=config["app_host"],
