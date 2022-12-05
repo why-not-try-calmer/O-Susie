@@ -101,13 +101,13 @@ if __name__ == "__main__":
 
     if len(argv) >= 2 and "--webhook" in argv:
         print(
-            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, host: {config['webhook_host']}."
+            f"Called with {argv}, running as aiohttp server after setting webhook."
         )
         from aiogram.utils import executor
 
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=f"/osusie/bot{config['token']}",
+            webhook_path=config['webhook_url_path'],
             skip_updates=True,
             on_startup=on_startup,
             host=config["host"],
