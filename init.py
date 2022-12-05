@@ -8,8 +8,8 @@ DELAY = 120
 
 config = {
     "webhook_host": env["WEBHOOK_HOST"],
-    "webhook_url_path": env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"],
-    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_ENDPOINT"] + env["TELEGRAM_BOT_TOKEN"]),
+    "webhook_path": env["WEBHOOK_PATH"],
+    "webhook_url": urljoin(env["WEBHOOK_HOST"], env["WEBHOOK_PATH"]),
     "key": env["KEY"],
     "port": int(env.get("PORT", 3001)),
     "host":"0.0.0.0",

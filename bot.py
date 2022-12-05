@@ -98,13 +98,13 @@ if __name__ == "__main__":
     asyncio.set_event_loop(loop)
     if len(argv) >= 2 and "--webhook" in argv:
         print(
-            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, webhook_path: {config['webhook_url_path']}, host: {config['webhook_host']}."
+            f"Called with {argv}, running as aiohttp server after setting webhook. Url path: {config['webhook_url']}, webhook_path: {config['webhook_path']}, host: {config['webhook_host']}."
         )
         from aiogram.utils import executor
 
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config["webhook_url_path"],
+            webhook_path=config["webhook_path"],
             skip_updates=True,
             on_startup=on_startup,
             host=config["host"],
