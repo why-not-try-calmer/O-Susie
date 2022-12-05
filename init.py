@@ -7,13 +7,13 @@ DELAY = 120
 
 
 config = {
-    "webhook_host": env["WEBHOOK_HOST"],
-    "webhook_url_path": f"{env['WEBHOOK_ENDPOINT']}/bot{env['TOKEN']}",
-    "webhook_url": f"{env['WEBHOOK_HOST']}{env['WEBHOOK_ENDPOINT']}/bot{env['TOKEN']}",
+    "host": env["HOST"],
+    "endpoint": env["ENDPOINT"],
+    "webhook_url": f"{env['HOST']}/{env['ENDPOINT']}/bot{env['TOKEN']}",
     "token": env['TOKEN'],
     "key": env["KEY"],
-    "port": int(env.get("PORT", 3001)),
-    "host":"0.0.0.0",
+    "app_port": int(env.get("PORT", 3001)),
+    "app_host":"0.0.0.0",
     "emojis": {
         "robot": "\U0001F916",
         "snake": "\U0001F40D",

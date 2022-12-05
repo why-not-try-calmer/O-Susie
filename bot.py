@@ -107,11 +107,11 @@ if __name__ == "__main__":
 
         executor.start_webhook(
             dispatcher=dp,
-            webhook_path=config['webhook_url_path'],
+            webhook_path=config['endpoint'],
             skip_updates=True,
             on_startup=on_startup,
-            host=config["host"],
-            port=config["port"],
+            host=config["app_host"],
+            port=config["app_port"],
         )
     else:
         print(f"Called with {argv}, running as long-polling worker.")
